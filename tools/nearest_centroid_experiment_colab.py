@@ -413,6 +413,17 @@ def main() -> None:
             print("  ⚠️ لا توجد بيانات لهذا القطب بالكاش -- تم تجاوزه.")
             continue
 
+        # ⚠️ تصحيح (أُضيف بعد اكتشاف المشكلة بتجربة لاحقة): نستبعد فئات غير
+        # مدعومة بهذا القطب (مثل "A" على aVR/V2/V6) -- بيانات المريض نفسه
+        # موجودة بكل الأقطاب الأربعة معاً، لكن هذا لا يعني دعم كل فئة مرضية
+        # تشخيصياً على كل قطب.
+        supported_classes = {"Normal", *pathological_classes}
+        n_before = len(sub)
+        sub = sub[sub["label"].isin(supported_classes)].reset_index(drop=True)
+        if len(sub) < n_before:
+            print(f"  ℹ️ استُبعدت {n_before - len(sub)} نبضة بفئات غير مدعومة بهذا القطب "
+                  f"(الفئات المدعومة: {sorted(supported_classes)})")
+
         lead_results = run_lead_comparison(sub, pathological_classes)
         all_results.extend(lead_results)
 
