@@ -59,11 +59,51 @@
     button:hover { background: var(--accent-hover); }
     button:disabled { background: #ccc; cursor: not-allowed; }
 
-    #result {
-      margin-top: 20px; padding: 16px; border-radius: 8px; background: var(--bg-soft);
-      border: 1px solid var(--border); white-space: pre-wrap; font-family: ui-monospace, monospace;
-      font-size: 13.5px; color: #444;
+    #result { margin-top: 20px; }
+
+    /* بطاقة النتيجة المبسّطة — هذا كل ما يحتاجه المستخدم النهائي بأول نظرة */
+    .result-card {
+      border-radius: 10px; padding: 20px 22px; margin-bottom: 12px;
+      border: 1px solid var(--border);
     }
+    .result-card.tone-normal { background: #f2f8f2; border-color: #bcdcc0; }
+    .result-card.tone-abnormal { background: #fdf3f0; border-color: #f0c4b8; }
+    .result-card.tone-error { background: var(--warn-bg); border-color: var(--warn-border); }
+
+    .result-title { font-size: 13.5px; color: #888; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: .03em; }
+    .result-class-name { font-size: 28px; font-weight: 700; margin: 0 0 4px 0; }
+    .tone-normal .result-class-name { color: #3f7a45; }
+    .tone-abnormal .result-class-name { color: #b0402c; }
+    .tone-error .result-class-name { color: var(--warn-text); font-size: 18px; }
+    .result-note { font-size: 14.5px; color: #666; margin: 4px 0 14px 0; }
+
+    .confidence-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .confidence-label { font-size: 13.5px; color: #777; white-space: nowrap; }
+    .confidence-value { font-size: 13.5px; font-weight: 600; color: #555; white-space: nowrap; }
+    .confidence-bar-track { flex: 1; height: 10px; border-radius: 6px; background: #e3e3e3; overflow: hidden; }
+    .confidence-bar-fill { height: 100%; border-radius: 6px; transition: width .4s ease; }
+    .tone-normal .confidence-bar-fill { background: #5fa867; }
+    .tone-abnormal .confidence-bar-fill { background: #c8543c; }
+
+    .result-meta { font-size: 13px; color: #999; margin-top: 10px; }
+    .email-status-note { font-size: 13.5px; color: #5c7291; margin-top: 8px; }
+
+    .details-toggle {
+      background: none; border: 1px solid var(--border); color: var(--accent);
+      padding: 6px 14px; font-size: 13.5px; font-weight: 500; border-radius: 6px;
+      cursor: pointer; margin-top: 4px;
+    }
+    .details-toggle:hover { background: var(--bg-soft); }
+
+    #detailsBlock {
+      display: none; margin-top: 12px; padding: 16px; border-radius: 8px; background: var(--bg-soft);
+      border: 1px solid var(--border);
+    }
+    #detailsBlock h4 { font-size: 14px; color: #666; margin: 0 0 8px 0; }
+    #detailsRaw {
+      white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 13px; color: #555; margin: 0;
+    }
+    .errors-list { font-size: 13.5px; color: #a05a2c; margin: 8px 0 0 0; padding-inline-start: 20px; }
 
     .leads-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-bottom: 12px; }
     .leads-grid .lead-box { margin-bottom: 0; }
@@ -170,6 +210,94 @@
       not_found: {{ t.confidence_not_found | tojson }},
     };
 
+    // نصوص بطاقة النتيجة المبسّطة
+    const R = {
+      title: {{ t.result_title | tojson }},
+      confidenceLabel: {{ t.result_confidence_label | tojson }},
+      leadsUsed: {{ t.result_leads_used | tojson }},
+      showDetails: {{ t.result_show_details | tojson }},
+      hideDetails: {{ t.result_hide_details | tojson }},
+      detailsTitle: {{ t.result_details_title | tojson }},
+      errorTitle: {{ t.result_error_title | tojson }},
+      normalNote: {{ t.result_normal_note | tojson }},
+      abnormalNote: {{ t.result_abnormal_note | tojson }},
+      classNames: {{ t.class_names | tojson }},
+    };
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    /**
+     * يعرض النتيجة بشكل مبسَّط (بطاقة كبيرة + شريط ثقة) بدل تفريغ JSON الخام
+     * مباشرة — ملاحظة تصميم صريحة من المستخدم: "الكم الهائل من المعلومات
+     * مبالغ فيه". التفاصيل الكاملة (كل الاحتمالات، لكل قطب) تبقى متوفرة
+     * كاملة، فقط مطوية خلف زر اختياري.
+     */
+    function renderResult(data) {
+      const resultDiv = document.getElementById('result');
+
+      if (data.error) {
+        let errorsHtml = '';
+        if (data.details && Object.keys(data.details).length) {
+          errorsHtml = '<ul class="errors-list">' +
+            Object.entries(data.details).map(([lead, msg]) =>
+              `<li>${escapeHtml(lead)}: ${escapeHtml(msg)}</li>`).join('') +
+            '</ul>';
+        }
+        resultDiv.innerHTML = `
+          <div class="result-card tone-error">
+            <p class="result-title">${escapeHtml(R.errorTitle)}</p>
+            <p class="result-class-name">${escapeHtml(data.error)}</p>
+            ${errorsHtml}
+          </div>
+        `;
+        return;
+      }
+
+      const finalClass = data.final_classification;
+      const confidencePct = Math.round((data.confidence || 0) * 100);
+      const isNormal = finalClass === 'Normal';
+      const tone = isNormal ? 'tone-normal' : 'tone-abnormal';
+      const displayName = (R.classNames && R.classNames[finalClass]) || finalClass;
+      const note = isNormal ? R.normalNote : R.abnormalNote;
+
+      let emailHtml = '';
+      if (data.email_status) {
+        emailHtml = `<p class="email-status-note">✉️ ${escapeHtml(data.email_status)}</p>`;
+      }
+
+      resultDiv.innerHTML = `
+        <div class="result-card ${tone}">
+          <p class="result-title">${escapeHtml(R.title)}</p>
+          <p class="result-class-name">${escapeHtml(displayName)}</p>
+          <p class="result-note">${escapeHtml(note)}</p>
+          <div class="confidence-row">
+            <span class="confidence-label">${escapeHtml(R.confidenceLabel)}</span>
+            <div class="confidence-bar-track">
+              <div class="confidence-bar-fill" style="width:${confidencePct}%;"></div>
+            </div>
+            <span class="confidence-value">${confidencePct}%</span>
+          </div>
+          <p class="result-meta">${R.leadsUsed.replace('{n}', data.n_leads_used ?? '—')}</p>
+          ${emailHtml}
+        </div>
+        <button type="button" class="details-toggle" id="detailsToggleBtn">${escapeHtml(R.showDetails)}</button>
+        <div id="detailsBlock">
+          <h4>${escapeHtml(R.detailsTitle)}</h4>
+          <pre id="detailsRaw">${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+        </div>
+      `;
+
+      const toggleBtn = document.getElementById('detailsToggleBtn');
+      const detailsBlock = document.getElementById('detailsBlock');
+      toggleBtn.addEventListener('click', () => {
+        const isOpen = detailsBlock.style.display === 'block';
+        detailsBlock.style.display = isOpen ? 'none' : 'block';
+        toggleBtn.textContent = isOpen ? R.showDetails : R.hideDetails;
+      });
+    }
+
     let detectedLeadsData = null;  // {LeadI: {image_b64, confidence}, aVR: {...}, ...}
 
     document.getElementById('detectPanelBtn').addEventListener('click', async () => {
@@ -241,7 +369,7 @@
       try {
         const res = await fetch('/classify', { method: 'POST', body: formData });
         const data = await res.json();
-        resultDiv.textContent = JSON.stringify(data, null, 2);
+        renderResult(data);
       } catch (err) {
         resultDiv.textContent = ERROR_PREFIX + err;
       }
@@ -257,7 +385,7 @@
       try {
         const res = await fetch('/classify', { method: 'POST', body: formData });
         const data = await res.json();
-        resultDiv.textContent = JSON.stringify(data, null, 2);
+        renderResult(data);
       } catch (err) {
         resultDiv.textContent = ERROR_PREFIX + err;
       }

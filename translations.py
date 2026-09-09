@@ -76,6 +76,22 @@ TRANSLATIONS = {
         "panel_review_note": "راجع كل قطب مكتشَف أدناه. لو أي واحد يبدو خاطئاً، تجاهل هذا القسم "
                               "واستخدم الرفع اليدوي بالأسفل بدلاً منه لهذا القطب تحديداً.",
         "manual_section_divider": "— أو: الطريقة اليدوية (رفع كل قطب على حدة) —",
+        "result_title": "النتيجة",
+        "result_confidence_label": "مستوى الثقة",
+        "result_leads_used": "عدد الأقطاب المستخدمة بالقرار: {n}",
+        "result_show_details": "عرض التفاصيل الكاملة ▾",
+        "result_hide_details": "إخفاء التفاصيل ▴",
+        "result_details_title": "بيانات تفصيلية (لكل قطب، كل الاحتمالات)",
+        "result_error_title": "تعذّر إتمام التصنيف",
+        "result_normal_note": "النتيجة الأقرب هي «طبيعي» — راجع دائماً مع طبيب مختص إن استمرت الأعراض.",
+        "result_abnormal_note": "هذا مؤشر أولي فقط لتحديد الأولوية — يجب تأكيده عبر تقييم طبي مختص.",
+        "class_names": {
+            "Normal": "طبيعي",
+            "A": "احتشاء أمامي",
+            "AS": "احتشاء أمامي حاجزي",
+            "IL": "احتشاء سفلي وحشي",
+            "IPL": "احتشاء سفلي خلفي وحشي",
+        },
     },
     "en": {
         "dir": "ltr",
@@ -157,6 +173,22 @@ TRANSLATIONS = {
                               "section and use the manual upload below instead for that "
                               "specific lead.",
         "manual_section_divider": "— or: Manual method (upload each lead separately) —",
+        "result_title": "Result",
+        "result_confidence_label": "Confidence",
+        "result_leads_used": "Leads used in this decision: {n}",
+        "result_show_details": "Show full details ▾",
+        "result_hide_details": "Hide details ▴",
+        "result_details_title": "Detailed data (per lead, all probabilities)",
+        "result_error_title": "Classification could not be completed",
+        "result_normal_note": "The closest result is \"Normal\" — always follow up with a doctor if symptoms persist.",
+        "result_abnormal_note": "This is a preliminary triage indicator only — it must be confirmed by a qualified medical evaluation.",
+        "class_names": {
+            "Normal": "Normal",
+            "A": "Anterior MI",
+            "AS": "Antero-Septal MI",
+            "IL": "Infero-Lateral MI",
+            "IPL": "Infero-Postero-Lateral MI",
+        },
     },
     "ru": {
         "dir": "ltr",
@@ -242,6 +274,22 @@ TRANSLATIONS = {
                               "неверно, проигнорируйте этот раздел и используйте ручную загрузку "
                               "ниже для этого конкретного отведения.",
         "manual_section_divider": "— или: Ручной способ (загрузка каждого отведения отдельно) —",
+        "result_title": "Результат",
+        "result_confidence_label": "Уверенность",
+        "result_leads_used": "Отведений использовано в решении: {n}",
+        "result_show_details": "Показать все детали ▾",
+        "result_hide_details": "Скрыть детали ▴",
+        "result_details_title": "Подробные данные (по каждому отведению, все вероятности)",
+        "result_error_title": "Не удалось выполнить классификацию",
+        "result_normal_note": "Ближайший результат — «норма». Всегда обращайтесь к врачу, если симптомы сохраняются.",
+        "result_abnormal_note": "Это только предварительный индикатор приоритетности — результат должен быть подтверждён квалифицированной медицинской оценкой.",
+        "class_names": {
+            "Normal": "Норма",
+            "A": "Передний ИМ",
+            "AS": "Передне-перегородочный ИМ",
+            "IL": "Нижне-боковой ИМ",
+            "IPL": "Нижне-задне-боковой ИМ",
+        },
     },
 }
 

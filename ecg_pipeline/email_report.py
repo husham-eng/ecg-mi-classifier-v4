@@ -155,13 +155,61 @@ def build_summary_table_html(lead_results: dict[str, dict]) -> str:
         for c in sorted(avg_probs, key=avg_probs.get, reverse=True)
     )
     return (
-        f"<p style='font-family:Arial,sans-serif;font-size:14px'>"
-        f"<b>Overall suggested result: {overall_predicted}</b></p>"
         "<table style='border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px'>"
         "<tr><th style='padding:6px 10px;border:1px solid #ccc'>Class</th>"
         "<th style='padding:6px 10px;border:1px solid #ccc'>Percentage (average across leads)</th></tr>"
         f"{rows}</table>"
     )
+
+
+# اسم كامل مقروء لكل رمز فئة (نفس التصنيفات المستخدمة بواجهة التطبيق) --
+# النصوص إنجليزية عمداً لتفادي مشاكل عرض العربي بالصور/الجداول عبر
+# عملاء بريد متفاوتي الدعم (راجع ملاحظة matplotlib أعلى الملف لنفس السبب).
+CLASS_FULL_NAMES = {
+    "Normal": "Normal",
+    "A": "Anterior MI",
+    "AS": "Antero-Septal MI",
+    "IL": "Infero-Lateral MI",
+    "IPL": "Infero-Postero-Lateral MI",
+}
+
+
+def build_summary_badge_html(lead_results: dict[str, dict]) -> str:
+    """
+    ملخص بصري بارز أعلى التقرير (نفس مبدأ بطاقة النتيجة بواجهة التطبيق) --
+    نتيجة واحدة واضحة + نسبة ثقة، قبل أي جدول أو شكل بياني تفصيلي.
+    ملاحظة تصميم من جلسة سابقة: التفاصيل الكاملة تبقى مطلوبة لمراجعة
+    الطبيب/الفني -- هذا الملخّص إضافة أعلى الصفحة، وليس بديلاً عن الجداول
+    والأشكال أدناه.
+    """
+    all_classes = sorted({c for r in lead_results.values() for c in r["probs"]})
+    n_leads = len(lead_results)
+    avg_probs = {
+        c: sum(r["probs"].get(c, 0.0) for r in lead_results.values()) / n_leads
+        for c in all_classes
+    }
+    overall_predicted = max(avg_probs, key=avg_probs.get)
+    confidence_pct = avg_probs[overall_predicted] * 100
+    display_name = CLASS_FULL_NAMES.get(overall_predicted, overall_predicted)
+    is_normal = overall_predicted == "Normal"
+    bg = "#f2f8f2" if is_normal else "#fdf3f0"
+    border = "#bcdcc0" if is_normal else "#f0c4b8"
+    text_color = "#3f7a45" if is_normal else "#b0402c"
+    bar_color = "#5fa867" if is_normal else "#c8543c"
+    return f"""
+    <div style="background:{bg};border:1px solid {border};border-radius:10px;
+                padding:18px 20px;margin:12px 0 18px 0;font-family:Arial,sans-serif">
+      <p style="margin:0 0 4px 0;font-size:12px;color:#888;text-transform:uppercase;
+                letter-spacing:.03em">Overall suggested result</p>
+      <p style="margin:0 0 10px 0;font-size:24px;font-weight:700;color:{text_color}">
+        {display_name} <span style="font-size:15px;font-weight:400;color:#888">({overall_predicted})</span>
+      </p>
+      <div style="background:#e3e3e3;border-radius:6px;height:10px;width:100%;max-width:320px;overflow:hidden">
+        <div style="background:{bar_color};height:100%;width:{confidence_pct:.0f}%"></div>
+      </div>
+      <p style="margin:6px 0 0 0;font-size:13px;color:#777">Confidence: {confidence_pct:.1f}% &middot; {n_leads} lead(s) used</p>
+    </div>
+    """
 
 
 # ============================================================
@@ -196,12 +244,22 @@ def generate_and_send_report(email_config: EmailAPIConfig, recipient_email: str,
 
     detailed_table = build_detailed_table_html(lead_results)
     summary_table = build_summary_table_html(lead_results)
+    summary_badge = build_summary_badge_html(lead_results)
 
     html_body = f"""
     <html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif">
-      <h2>ECG Recording Classification Report — {patient_label}</h2>
+      <h2 style="margin-bottom:4px">ECG Recording Classification Report</h2>
+      <p style="margin:0 0 4px 0;color:#888;font-size:13px">{patient_label}</p>
 
-      <h3>Summary result</h3>
+      {summary_badge}
+
+      <hr style="border:none;border-top:1px solid #e3e3e3;margin:22px 0">
+
+      <p style="color:#888;font-size:12.5px;margin:0 0 14px 0">
+        The section below contains full per-lead detail, for clinical/field-study review.
+      </p>
+
+      <h3>Per-class breakdown (average across leads)</h3>
       {summary_table}
 
       <h3>Detailed table (per lead)</h3>
