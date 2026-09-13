@@ -1,0 +1,6 @@
+,pred_A,pred_AS,pred_IL,pred_IPL,pred_Normal
+true_A,226,430,221,52,494
+true_AS,236,602,257,63,250
+true_IL,199,434,291,75,428
+true_IPL,48,145,95,23,63
+true_Normal,83,63,97,14,1063
